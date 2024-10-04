@@ -1,3 +1,4 @@
+const Location = require("../models/Location");
 const Property = require("../models/Property");
 
 // Create a new property
@@ -7,13 +8,13 @@ const createProperty = async (req, res) => {
       title,
       description,
       price,
-      location,
+      locationId, // New field for location ID
       images,
-      category, // New field
-      roomCount, // New field
-      bathroomCount, // New field
-      guestCount, // New field
-      locationValue, // New field
+      category,
+      roomCount,
+      bathroomCount,
+      guestCount,
+      locationValue,
     } = req.body;
 
     // Check if all required fields are provided
@@ -21,7 +22,7 @@ const createProperty = async (req, res) => {
       !title ||
       !description ||
       !price ||
-      !location ||
+      !locationId || // Updated to locationId
       !images ||
       images.length === 0 ||
       !category ||
@@ -33,17 +34,23 @@ const createProperty = async (req, res) => {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
+    // Check if location exists
+    const location = await Location.findById(locationId);
+    if (!location) {
+      return res.status(400).json({ message: "Location not found" });
+    }
+
     const newProperty = new Property({
       title,
       description,
       price,
-      location,
+      location: locationId, // Save location ID
       images,
-      category, // New field
-      roomCount, // New field
-      bathroomCount, // New field
-      guestCount, // New field
-      locationValue, // New field
+      category,
+      roomCount,
+      bathroomCount,
+      guestCount,
+      locationValue,
     });
 
     await newProperty.save();
@@ -55,9 +62,30 @@ const createProperty = async (req, res) => {
 };
 
 // Get all properties
+// Get all properties with optional category filter
 const getAllProperties = async (req, res) => {
+  const { category, locationValue } = req.query; // Get category and locationValue from the query string
+
   try {
-    const properties = await Property.find();
+    // Build the filter query based on provided filters
+    const filter = {};
+
+    if (category) {
+      filter.category = category; // Filter by category if provided
+    }
+
+    // Check if locationValue is valid
+    if (locationValue) {
+      const location = await Location.findOne({ value: locationValue }); // Find location by value
+      if (location) {
+        filter.location = location._id; // Use the location ObjectId for filtering properties
+      } else {
+        return res.status(400).json({ message: "Invalid location" });
+      }
+    }
+
+    const properties = await Property.find(filter).populate("location"); // Populate location details if needed
+
     res.json(properties);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -90,12 +118,30 @@ const updateProperty = async (req, res) => {
     images,
     cleaningFee,
     serviceFee,
+    category, // Add these fields
+    roomCount,
+    bathroomCount,
+    guestCount,
+    locationValue, // If you want to update locationValue too
   } = req.body;
 
   try {
     const updatedProperty = await Property.findByIdAndUpdate(
       id,
-      { title, description, price, location, images, cleaningFee, serviceFee },
+      {
+        title,
+        description,
+        price,
+        location,
+        images,
+        cleaningFee,
+        serviceFee,
+        category, // Include these in the update
+        roomCount,
+        bathroomCount,
+        guestCount,
+        locationValue,
+      },
       { new: true }
     );
 
@@ -103,7 +149,10 @@ const updateProperty = async (req, res) => {
       return res.status(404).json({ message: "Property not found" });
     }
 
-    res.json(updatedProperty);
+    res.json({
+      message: "Property updated successfully",
+      data: updatedProperty,
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

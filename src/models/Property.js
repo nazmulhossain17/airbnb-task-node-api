@@ -1,4 +1,3 @@
-// models/Property.js
 const mongoose = require("mongoose");
 
 const propertySchema = new mongoose.Schema({
@@ -15,7 +14,8 @@ const propertySchema = new mongoose.Schema({
     required: true,
   },
   location: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId, // Change to ObjectId
+    ref: "Location", // Reference to Location model
     required: true,
   },
   images: {
@@ -23,23 +23,23 @@ const propertySchema = new mongoose.Schema({
     required: true,
   },
   category: {
-    type: String, // New field for property category
+    type: String,
     required: true,
   },
   roomCount: {
-    type: Number, // New field for the number of rooms
+    type: Number,
     required: true,
   },
   bathroomCount: {
-    type: Number, // New field for the number of bathrooms
+    type: Number,
     required: true,
   },
   guestCount: {
-    type: Number, // New field for the maximum guest count
+    type: Number,
     required: true,
   },
   locationValue: {
-    type: String, // New field for location value
+    type: String,
     required: true,
   },
   createdAt: {
